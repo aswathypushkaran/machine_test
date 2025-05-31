@@ -4,6 +4,7 @@ from .serializers import NoteSerializer
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
+from rest_framework import status
 
 class NoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all()
@@ -12,10 +13,23 @@ class NoteViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+        
     def get_queryset(self):
         # Only return notes created by the authenticated user
         return Note.objects.filter(created_by=self.request.user)
     
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+
+        # After deleting, get remaining notes for this user
+        remaining_notes = self.get_queryset()
+        serializer = self.get_serializer(remaining_notes, many=True)
+
+        return Response({
+            'detail': 'Note deleted successfully.',
+            'remaining_notes': serializer.data
+        }, status=status.HTTP_200_OK)
 
 
 class NotesSummaryAPIView(generics.GenericAPIView):
