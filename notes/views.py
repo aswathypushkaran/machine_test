@@ -5,6 +5,7 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework import status
+from rest_framework.exceptions import NotFound
 
 class NoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all()
@@ -59,3 +60,19 @@ class TagListAPIView(generics.ListAPIView):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = [permissions.IsAuthenticated]  # Optional, if you want auth
+
+
+class NotesByTagAPIView(generics.ListAPIView):
+    serializer_class = NoteSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        tag_id = self.kwargs.get('tag_id')
+        # Validate tag existence
+        try:
+            tag = Tag.objects.get(id=tag_id)
+        except Tag.DoesNotExist:
+            raise NotFound('Tag not found')
+
+        # Return notes linked to this tag and created by current user
+        return Note.objects.filter(tag=tag, created_by=self.request.user)
