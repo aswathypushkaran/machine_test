@@ -1,6 +1,6 @@
 from rest_framework import viewsets, permissions
-from .models import Note
-from .serializers import NoteSerializer
+from .models import Note, Tag
+from .serializers import NoteSerializer, TagSerializer
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
@@ -13,7 +13,7 @@ class NoteViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
-        
+
     def get_queryset(self):
         # Only return notes created by the authenticated user
         return Note.objects.filter(created_by=self.request.user)
@@ -54,3 +54,8 @@ class NotesSummaryAPIView(generics.GenericAPIView):
             'notes': notes_list
         })
     
+
+class TagListAPIView(generics.ListAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = [permissions.IsAuthenticated]  # Optional, if you want auth
