@@ -12,6 +12,11 @@ class NoteViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+    def get_queryset(self):
+        # Only return notes created by the authenticated user
+        return Note.objects.filter(created_by=self.request.user)
+    
+
 
 class NotesSummaryAPIView(generics.GenericAPIView):
     queryset = Note.objects.all()
@@ -21,12 +26,11 @@ class NotesSummaryAPIView(generics.GenericAPIView):
         notes = self.get_queryset()
         total_notes = notes.count()
 
-        # Build list of notes with hyperlink to detail
         notes_list = [
             {
                 'id': note.id,
                 'title': note.title,
-                'url': reverse('note-detail', args=[note.id], request=request)
+                'url': reverse('notes-detail', args=[note.id], request=request)
             }
             for note in notes
         ]
@@ -36,7 +40,3 @@ class NotesSummaryAPIView(generics.GenericAPIView):
             'notes': notes_list
         })
     
-
-class NoteDetailAPIView(generics.RetrieveAPIView):
-    queryset = Note.objects.all()
-    serializer_class = NoteSerializer
